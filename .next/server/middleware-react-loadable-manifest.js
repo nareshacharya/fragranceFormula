@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST="{\"components/PerfumeFormulaBuilder.tsx -> @/lib/ingredientsData\":{\"id\":\"components/PerfumeFormulaBuilder.tsx -> @/lib/ingredientsData\",\"files\":[\"static/chunks/_app-pages-browser_lib_ingredientsData_ts.js\"]}}"
