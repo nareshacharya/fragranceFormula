@@ -95,12 +95,12 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
     }
   };
 
-  // Calculate padding based on level
-  const paddingLeft = level * 16;
+  // Reduced padding based on level
+  const paddingLeft = level * 8;
 
   if (isLeaf) {
     return (
-      <div style={{ paddingLeft: paddingLeft + 8, minWidth: '300px' }} className="py-1">
+      <div style={{ paddingLeft: paddingLeft + 4, minWidth: '280px' }} className="py-1">
         <DraggableIngredient ingredient={ingredient} isDisabled={isUsed} />
       </div>
     );
@@ -109,10 +109,10 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
   // Level 1 - Main categories (Floral, Citrus, etc.)
   if (level === 1) {
     return (
-      <div style={{ minWidth: '300px' }}>
+      <div style={{ minWidth: '280px' }}>
         <div
-          className="flex items-center py-2 px-2 hover:bg-gray-50 cursor-pointer rounded w-full"
-          style={{ paddingLeft: `${paddingLeft}px`, minWidth: '300px' }}
+          className="flex items-center py-2 px-1 hover:bg-gray-50 cursor-pointer rounded w-full"
+          style={{ paddingLeft: `${paddingLeft}px`, minWidth: '280px' }}
           onClick={handleClick}
         >
           <div className="w-3 h-3 flex items-center justify-center mr-1 flex-shrink-0">
@@ -150,10 +150,10 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
   // Level 2 - Subcategories (Rose, Jasmine, etc.)
   if (level === 2) {
     return (
-      <div style={{ minWidth: '300px' }}>
+      <div style={{ minWidth: '280px' }}>
         <div
-          className="flex items-center py-2 px-2 hover:bg-gray-50 cursor-pointer rounded w-full"
-          style={{ paddingLeft: `${paddingLeft}px`, minWidth: '300px' }}
+          className="flex items-center py-2 px-1 hover:bg-gray-50 cursor-pointer rounded w-full"
+          style={{ paddingLeft: `${paddingLeft}px`, minWidth: '280px' }}
           onClick={handleClick}
         >
           <div className="w-3 h-3 flex items-center justify-center mr-1 flex-shrink-0">
@@ -190,10 +190,10 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
 
   // Level 3+ - Individual ingredients or further subcategories
   return (
-    <div style={{ minWidth: '300px' }}>
+    <div style={{ minWidth: '280px' }}>
       <div
-        className="flex items-center py-2 px-2 hover:bg-gray-50 cursor-pointer rounded w-full"
-        style={{ paddingLeft: `${paddingLeft}px`, minWidth: '300px' }}
+        className="flex items-center py-2 px-1 hover:bg-gray-50 cursor-pointer rounded w-full"
+        style={{ paddingLeft: `${paddingLeft}px`, minWidth: '280px' }}
         onClick={handleClick}
       >
         <div className="w-3 h-3 flex items-center justify-center mr-1 flex-shrink-0">
@@ -573,25 +573,28 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-3 lg:p-4 border-b border-gray-200">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-semibold text-gray-900">Ingredients</h3>
-          <button
-            onClick={onToggleCollapse}
-            className="p-1 hover:bg-gray-100 rounded transition-colors"
-          >
-            <div className="w-4 h-4 flex items-center justify-center">
-              <i className="ri-menu-fold-line text-gray-600" />
-            </div>
-          </button>
+          <h3 className="text-lg lg:text-xl font-semibold text-gray-900">Ingredients</h3>
+          {/* Only show collapse button on desktop/tablet horizontal */}
+          <div className="hidden lg:block">
+            <button
+              onClick={onToggleCollapse}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <div className="w-4 h-4 flex items-center justify-center">
+                <i className="ri-menu-fold-line text-gray-600" />
+              </div>
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-1 mb-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1 mb-3">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center p-2 rounded text-sm transition-colors ${
+              className={`flex flex-col items-center p-2 rounded text-xs lg:text-sm transition-colors ${
                 activeTab === tab.id
                   ? 'bg-teal-600 text-white'
                   : 'text-gray-500 hover:bg-gray-200'
@@ -600,7 +603,7 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
               <div className="w-4 h-4 flex items-center justify-center mb-1">
                 <i className={tab.icon} />
               </div>
-              <span className="leading-tight text-center text-sm">{tab.name}</span>
+              <span className="leading-tight text-center">{tab.name}</span>
             </button>
           ))}
         </div>
@@ -619,7 +622,7 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-2 lg:p-4">
         {currentContent.length > 0 && (
           <div className="mb-4">
             <div className="flex items-center gap-2">
@@ -644,7 +647,7 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
                     <button
                       key={ingredient.id}
                       onClick={() => toggleNode(ingredient.id)}
-                      className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                      className={`flex-shrink-0 px-3 lg:px-4 py-2 rounded-full text-xs lg:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap ${
                         expandedNodes.has(ingredient.id)
                           ? 'bg-pink-600 text-white'
                           : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'

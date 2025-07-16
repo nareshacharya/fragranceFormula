@@ -33,8 +33,6 @@ export default function PerfumeFormulaBuilder() {
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
   const [activeIngredient, setActiveIngredient] = useState<Ingredient | null>(null);
   const [ingredientsData, setIngredientsData] = useState<Ingredient[]>([]);
-  const [showSectionConfig, setShowSectionConfig] = useState(false);
-  const [tempSections, setTempSections] = useState<{id: string, name: string, percentage: string}[]>([]);
 
   // Load ingredients from external JSON source
   useEffect(() => {
@@ -148,30 +146,8 @@ export default function PerfumeFormulaBuilder() {
     ));
   };
 
-  const openSectionConfig = () => {
-    setTempSections(sections.map(s => ({ id: s.id, name: s.name, percentage: s.percentage })));
-    setShowSectionConfig(true);
-  };
-
-  const addTempSection = () => {
-    const newId = `section-${Date.now()}`;
-    setTempSections(prev => [...prev, { id: newId, name: 'New Section', percentage: '10%' }]);
-  };
-
-  const removeTempSection = (index: number) => {
-    if (tempSections.length > 1) {
-      setTempSections(prev => prev.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateTempSection = (index: number, field: string, value: string) => {
-    setTempSections(prev => prev.map((section, i) => 
-      i === index ? { ...section, [field]: value } : section
-    ));
-  };
-
-  const saveSectionConfig = () => {
-    const newSections: FormulaSection[] = tempSections.map(temp => {
+  const handleConfigureSections = (newSections: {id: string, name: string, percentage: string}[]) => {
+    const updatedSections: FormulaSection[] = newSections.map(temp => {
       const existingSection = sections.find(s => s.id === temp.id);
       return {
         id: temp.id,
@@ -180,8 +156,7 @@ export default function PerfumeFormulaBuilder() {
         ingredients: existingSection?.ingredients || []
       };
     });
-    setSections(newSections);
-    setShowSectionConfig(false);
+    setSections(updatedSections);
   };
 
   return (
@@ -190,8 +165,8 @@ export default function PerfumeFormulaBuilder() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen bg-gray-50 p-4 gap-2">
-        <div className={`${isPaletteCollapsed ? 'w-16' : 'w-96'} transition-all duration-300 flex-shrink-0`}>
+      <div className="flex flex-col lg:flex-row h-screen bg-gray-50 p-2 lg:p-4 gap-2">
+        <div className={`${isPaletteCollapsed ? 'w-16' : 'w-full lg:w-80 xl:w-96'} ${isPaletteCollapsed ? 'h-auto' : 'h-80 lg:h-auto'} transition-all duration-300 flex-shrink-0 order-1`}>
           <IngredientsPalette
             ingredients={ingredientsData}
             isCollapsed={isPaletteCollapsed}
@@ -200,96 +175,16 @@ export default function PerfumeFormulaBuilder() {
           />
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 order-2">
           <FormulaCanvas
             sections={sections}
             onAddIngredient={addIngredientToSection}
             onRemoveIngredient={removeIngredientFromSection}
             onUpdateIngredient={updateIngredientInSection}
-            onConfigureSections={openSectionConfig}
+            onConfigureSections={handleConfigureSections}
           />
         </div>
       </div>
-
-      {/* Section Configuration Modal */}
-      {showSectionConfig && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Configure Drop Zones</h2>
-              <button
-                onClick={() => setShowSectionConfig(false)}
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                <i className="ri-close-line"></i>
-              </button>
-            </div>
-
-            <div className="p-4 max-h-[60vh] overflow-y-auto">
-              <div className="space-y-4">
-                {tempSections.map((section, index) => (
-                  <div key={section.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Zone Name</label>
-                        <input
-                          type="text"
-                          value={section.name}
-                          onChange={(e) => updateTempSection(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <div className="w-32">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Percentage</label>
-                        <input
-                          type="text"
-                          value={section.percentage}
-                          onChange={(e) => updateTempSection(index, 'percentage', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-                      <button
-                        onClick={() => removeTempSection(index)}
-                        disabled={tempSections.length <= 1}
-                        className={`w-10 h-10 flex items-center justify-center rounded-lg ${
-                          tempSections.length <= 1
-                            ? 'text-gray-300 cursor-not-allowed'
-                            : 'text-red-500 hover:bg-red-50'
-                        }`}
-                      >
-                        <i className="ri-delete-bin-line"></i>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  onClick={addTempSection}
-                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <i className="ri-add-line mr-2"></i>
-                  Add New Drop Zone
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-gray-200 flex justify-end gap-2">
-              <button
-                onClick={() => setShowSectionConfig(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveSectionConfig}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <DragOverlay>
         {activeIngredient ? (
