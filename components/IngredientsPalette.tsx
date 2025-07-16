@@ -19,6 +19,7 @@ function DraggableIngredient({ ingredient, isDisabled = false }: DraggableIngred
 
   const style = transform ? {
     transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 1000,
   } : undefined;
 
   return (
@@ -100,7 +101,7 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
 
   if (isLeaf) {
     return (
-      <div style={{ paddingLeft: paddingLeft + 4, minWidth: '280px' }} className="py-1">
+      <div style={{ paddingLeft: paddingLeft + 4 }} className="py-1">
         <DraggableIngredient ingredient={ingredient} isDisabled={isUsed} />
       </div>
     );
@@ -109,21 +110,21 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
   // Level 1 - Main categories (Floral, Citrus, etc.)
   if (level === 1) {
     return (
-      <div style={{ minWidth: '280px' }}>
+      <div>
         <div
           className="flex items-center py-2 px-1 hover:bg-gray-50 cursor-pointer rounded w-full"
-          style={{ paddingLeft: `${paddingLeft}px`, minWidth: '280px' }}
+          style={{ paddingLeft: `${paddingLeft}px` }}
           onClick={handleClick}
         >
           <div className="w-3 h-3 flex items-center justify-center mr-1 flex-shrink-0">
             <i className={`ri-arrow-${isExpanded ? 'down' : 'right'}-s-line text-gray-600 text-sm`} />
           </div>
           <div className="w-20 h-20 mr-3 flex-shrink-0 relative rounded border-2 bg-blue-100 border-blue-300 text-blue-800 flex items-center justify-center">
-            <span className="text-base font-semibold text-center leading-tight px-2 break-words word-break-break-word overflow-hidden">
+            <span className="text-base font-semibold text-center leading-tight px-2 break-words overflow-hidden">
               {ingredient.name}
             </span>
           </div>
-          <span className="text-gray-700 text-base font-medium flex-1 ml-2 break-words word-break-break-word">
+          <span className="text-gray-700 text-base font-medium flex-1 ml-2 break-words">
             {ingredient.name}
           </span>
         </div>
@@ -150,21 +151,21 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
   // Level 2 - Subcategories (Rose, Jasmine, etc.)
   if (level === 2) {
     return (
-      <div style={{ minWidth: '280px' }}>
+      <div>
         <div
           className="flex items-center py-2 px-1 hover:bg-gray-50 cursor-pointer rounded w-full"
-          style={{ paddingLeft: `${paddingLeft}px`, minWidth: '280px' }}
+          style={{ paddingLeft: `${paddingLeft}px` }}
           onClick={handleClick}
         >
           <div className="w-3 h-3 flex items-center justify-center mr-1 flex-shrink-0">
             <i className={`ri-arrow-${isExpanded ? 'down' : 'right'}-s-line text-gray-600 text-sm`} />
           </div>
           <div className="w-16 h-16 mr-3 flex-shrink-0 relative rounded border bg-green-100 border-green-300 text-green-800 flex items-center justify-center">
-            <span className="text-sm font-medium text-center leading-tight px-2 break-words word-break-break-word overflow-hidden">
+            <span className="text-sm font-medium text-center leading-tight px-2 break-words overflow-hidden">
               {ingredient.name}
             </span>
           </div>
-          <span className="text-gray-700 text-sm font-medium flex-1 ml-2 break-words word-break-break-word">
+          <span className="text-gray-700 text-sm font-medium flex-1 ml-2 break-words">
             {ingredient.name}
           </span>
         </div>
@@ -190,17 +191,17 @@ function IngredientNode({ ingredient, level, expandedNodes, onToggle, searchTerm
 
   // Level 3+ - Individual ingredients or further subcategories
   return (
-    <div style={{ minWidth: '280px' }}>
+    <div>
       <div
         className="flex items-center py-2 px-1 hover:bg-gray-50 cursor-pointer rounded w-full"
-        style={{ paddingLeft: `${paddingLeft}px`, minWidth: '280px' }}
+        style={{ paddingLeft: `${paddingLeft}px` }}
         onClick={handleClick}
       >
         <div className="w-3 h-3 flex items-center justify-center mr-1 flex-shrink-0">
           <i className={`ri-arrow-${isExpanded ? 'down' : 'right'}-s-line text-gray-600 text-sm`} />
         </div>
         <div className="w-full h-16 relative rounded border bg-purple-100 border-purple-300 text-purple-800 flex items-center justify-center p-2">
-          <span className="text-sm font-medium text-center leading-tight break-words word-break-break-word overflow-hidden w-full">
+          <span className="text-sm font-medium text-center leading-tight break-words overflow-hidden w-full">
             {ingredient.name}
           </span>
         </div>
@@ -234,7 +235,7 @@ interface IngredientsPaletteProps {
 
 export default function IngredientsPalette({ ingredients, isCollapsed, onToggleCollapse, usedIngredientIds }: IngredientsPaletteProps) {
   const [activeTab, setActiveTab] = useState('Source');
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['natural']));
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['natural', 'lib-popular', 'fg-aldehydes']));
   const [searchTerm, setSearchTerm] = useState('');
   const [secondLevelScrollIndex, setSecondLevelScrollIndex] = useState(0);
 
@@ -520,12 +521,27 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
   const visibleSecondLevelTabs = 2;
   const maxSecondLevelScrollIndex = Math.max(0, currentContent.length - visibleSecondLevelTabs);
 
-  const scrollSecondLevelLeft = () => {
-    setSecondLevelScrollIndex(Math.max(0, secondLevelScrollIndex - 1));
+  // Auto-expand first element based on active tab
+  const getDefaultExpandedForTab = (tabId: string) => {
+    switch (tabId) {
+      case 'Source':
+        return 'natural';
+      case 'Library':
+        return 'lib-popular';
+      case 'Functional Group':
+        return 'fg-aldehydes';
+      default:
+        return '';
+    }
   };
 
-  const scrollSecondLevelRight = () => {
-    setSecondLevelScrollIndex(Math.min(maxSecondLevelScrollIndex, secondLevelScrollIndex + 1));
+  // Update expanded nodes when switching tabs
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    const defaultExpanded = getDefaultExpandedForTab(tabId);
+    if (defaultExpanded) {
+      setExpandedNodes(new Set([defaultExpanded]));
+    }
   };
 
   const toggleNode = (id: string) => {
@@ -538,9 +554,17 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
     setExpandedNodes(newExpanded);
   };
 
+  const scrollSecondLevelLeft = () => {
+    setSecondLevelScrollIndex(Math.max(0, secondLevelScrollIndex - 1));
+  };
+
+  const scrollSecondLevelRight = () => {
+    setSecondLevelScrollIndex(Math.min(maxSecondLevelScrollIndex, secondLevelScrollIndex + 1));
+  };
+
   if (isCollapsed) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col w-16">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col w-16 overflow-hidden">
         <div className="p-2 border-b border-gray-200">
           <button
             onClick={onToggleCollapse}
@@ -555,7 +579,7 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
                 activeTab === tab.id
                   ? 'bg-teal-600 text-white'
@@ -572,11 +596,10 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
-      <div className="p-3 lg:p-4 border-b border-gray-200">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
+      <div className="p-3 lg:p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg lg:text-xl font-semibold text-gray-900">Ingredients</h3>
-          {/* Only show collapse button on desktop/tablet horizontal */}
           <div className="hidden lg:block">
             <button
               onClick={onToggleCollapse}
@@ -593,7 +616,7 @@ export default function IngredientsPalette({ ingredients, isCollapsed, onToggleC
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex flex-col items-center p-2 rounded text-xs lg:text-sm transition-colors ${
                 activeTab === tab.id
                   ? 'bg-teal-600 text-white'
