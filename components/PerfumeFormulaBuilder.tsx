@@ -159,6 +159,10 @@ export default function PerfumeFormulaBuilder() {
     setSections(updatedSections);
   };
 
+  const handleUpdateSections = (newSections: FormulaSection[]) => {
+    setSections(newSections);
+  };
+
   return (
     <DndContext
       sensors={sensors}
@@ -182,6 +186,7 @@ export default function PerfumeFormulaBuilder() {
             onRemoveIngredient={removeIngredientFromSection}
             onUpdateIngredient={updateIngredientInSection}
             onConfigureSections={handleConfigureSections}
+            onUpdateSections={handleUpdateSections}
           />
         </div>
       </div>

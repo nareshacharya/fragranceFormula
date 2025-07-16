@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { Ingredient, FormulaSection } from './lib/ingredientsData';
 
@@ -668,7 +668,8 @@ function ConfigurationModal({
           {activeTab === 'zones' && (
             <div className="space-y-4">
               <div className="text-sm text-gray-600 mb-4">
-                Configure the drop zones where ingredients can be placed. Each zone represents a different part of your fragrance formula.
+                Configure the drop zones where ingredients can be placed. Each zone represents a different part of your
+                fragrance formula.
               </div>
               {tempSections.map((section, index) => (
                 <div key={section.id} className="border border-gray-200 rounded-lg p-4">
@@ -719,7 +720,8 @@ function ConfigurationModal({
           {activeTab === 'columns' && (
             <div className="space-y-4">
               <div className="text-sm text-gray-600 mb-4">
-                Configure which columns appear in the ingredient tables. Reorder columns using the arrow buttons and toggle visibility with checkboxes.
+                Configure which columns appear in the ingredient tables. Reorder columns using the arrow buttons and
+                toggle visibility with checkboxes.
               </div>
               {tempColumns.map((column, index) => (
                 <div key={column.id} className="border border-gray-200 rounded-lg p-3">
@@ -821,6 +823,14 @@ interface FormulaCanvasProps {
   onRemoveIngredient: (sectionId: string, ingredientId: string) => void;
   onUpdateIngredient: (sectionId: string, ingredientId: string, updates: Partial<Ingredient>) => void;
   onConfigureSections: (sections: { id: string; name: string; percentage: string }[]) => void;
+  onUpdateSections: (sections: FormulaSection[]) => void;
+}
+
+interface Trial {
+  id: string;
+  name: string;
+  sections: FormulaSection[];
+  createdAt: Date;
 }
 
 export default function FormulaCanvas({
@@ -828,9 +838,19 @@ export default function FormulaCanvas({
   onAddIngredient,
   onRemoveIngredient,
   onUpdateIngredient,
-  onConfigureSections
+  onConfigureSections,
+  onUpdateSections
 }: FormulaCanvasProps) {
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [trials, setTrials] = useState<Trial[]>([
+    {
+      id: 'trial-1',
+      name: 'Trial 1',
+      sections: sections,
+      createdAt: new Date()
+    }
+  ]);
+  const [activeTrialId, setActiveTrialId] = useState('trial-1');
   const [columns, setColumns] = useState<ColumnConfig[]>([
     { id: 'name', header: 'Compound', width: '25%', visible: true, type: 'text' },
     { id: 'cas', header: 'CAS No', width: '15%', visible: true, type: 'text' },
@@ -844,18 +864,110 @@ export default function FormulaCanvas({
     { id: 'actions', header: 'Actions', width: '14%', visible: true, type: 'actions' }
   ]);
 
-  const totalItems = sections.reduce((sum, section) => sum + section.ingredients.length, 0);
-  const totalCost = sections.reduce(
+  const activeTrial = trials.find((t) => t.id === activeTrialId);
+  const currentSections = activeTrial?.sections || sections;
+
+  useEffect(() => {
+    setTrials((prev) =>
+      prev.map((trial) =>
+        trial.id === activeTrialId ? { ...trial, sections: sections } : trial
+      )
+    );
+  }, [sections, activeTrialId]);
+
+  const addNewTrial = () => {
+    const newTrialNumber = trials.length + 1;
+    const newTrial: Trial = {
+      id: `trial-${newTrialNumber}`,
+      name: `Trial ${newTrialNumber}`,
+      sections: [
+        {
+          id: 'top-notes',
+          name: 'Top Notes',
+          percentage: '10-15%',
+          ingredients: []
+        },
+        {
+          id: 'middle-notes',
+          name: 'Middle Notes',
+          percentage: '30-50%',
+          ingredients: []
+        },
+        {
+          id: 'base-notes',
+          name: 'Base Notes',
+          percentage: '20-30%',
+          ingredients: []
+        }
+      ],
+      createdAt: new Date()
+    };
+
+    setTrials((prev) => [...prev, newTrial]);
+    setActiveTrialId(newTrial.id);
+    onUpdateSections(newTrial.sections);
+  };
+
+  const switchTrial = (trialId: string) => {
+    if (trialId !== activeTrialId) {
+      setActiveTrialId(trialId);
+
+      const newTrial = trials.find((t) => t.id === trialId);
+      if (newTrial) {
+        onUpdateSections(newTrial.sections);
+      }
+    }
+  };
+
+  const deleteTrialTab = (trialId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (trials.length <= 1) return;
+
+    const trialIndex = trials.findIndex((t) => t.id === trialId);
+    const newTrials = trials.filter((t) => t.id !== trialId);
+    setTrials(newTrials);
+
+    if (activeTrialId === trialId) {
+      const newActiveIndex = Math.max(0, trialIndex - 1);
+      const newActiveTrial = newTrials[newActiveIndex];
+      setActiveTrialId(newActiveTrial.id);
+      onUpdateSections(newActiveTrial.sections);
+    }
+  };
+
+  const renameTrialTab = (trialId: string, newName: string) => {
+    setTrials((prev) =>
+      prev.map((trial) =>
+        trial.id === trialId ? { ...trial, name: newName } : trial
+      )
+    );
+  };
+
+  const handleAddIngredient = (sectionId: string, ingredient: Ingredient) => {
+    onAddIngredient(sectionId, ingredient);
+  };
+
+  const handleRemoveIngredient = (sectionId: string, ingredientId: string) => {
+    onRemoveIngredient(sectionId, ingredientId);
+  };
+
+  const handleUpdateIngredient = (sectionId: string, ingredientId: string, updates: Partial<Ingredient>) => {
+    onUpdateIngredient(sectionId, ingredientId, updates);
+  };
+
+  const totalItems = currentSections.reduce((sum, section) => sum + section.ingredients.length, 0);
+  const totalCost = currentSections.reduce(
     (sum, section) =>
       sum + section.ingredients.reduce((sectionSum, ingredient) => sectionSum + (ingredient.cost || 0), 0),
     0
   );
-  const totalConcentration = sections.reduce(
+  const totalConcentration = currentSections.reduce(
     (sum, section) =>
       sum + section.ingredients.reduce((sectionSum, ingredient) => sectionSum + (ingredient.concentration || 0), 0),
     0
   );
-  const totalQuantity = sections.reduce(
+  const totalQuantity = currentSections.reduce(
     (sum, section) =>
       sum + section.ingredients.reduce((sectionSum, ingredient) => sectionSum + (ingredient.quantity || 0), 0),
     0
@@ -869,7 +981,34 @@ export default function FormulaCanvas({
 
   return (
     <div className="flex flex-col h-full bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-3 lg:p-6 bg-white border-b border-gray-200 rounded-t-lg">
+      {/* Trials Tab Bar */}
+      <div className="border-b border-gray-200 bg-white rounded-t-lg">
+        <div className="flex items-center justify-between px-4 py-2">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            {trials.map((trial) => (
+              <TrialTab
+                key={trial.id}
+                trial={trial}
+                isActive={trial.id === activeTrialId}
+                onClick={() => switchTrial(trial.id)}
+                onDelete={(e) => deleteTrialTab(trial.id, e)}
+                onRename={(newName) => renameTrialTab(trial.id, newName)}
+                canDelete={trials.length > 1}
+              />
+            ))}
+            <button
+              onClick={addNewTrial}
+              className="flex items-center gap-1 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors whitespace-nowrap"
+            >
+              <i className="ri-add-line"></i>
+              Add Trial
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Canvas Content */}
+      <div className="p-3 lg:p-6 bg-white border-b border-gray-200">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-4 lg:mb-6 gap-4">
           <div className="flex items-center gap-4">
             <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Formula Canvas</h2>
@@ -973,13 +1112,13 @@ export default function FormulaCanvas({
 
       <div className="flex-1 overflow-y-auto p-3 lg:p-6">
         <div className="space-y-4">
-          {sections.map((section) => (
+          {currentSections.map((section) => (
             <DroppableSection
               key={section.id}
               section={section}
-              onDrop={(ingredient) => onAddIngredient(section.id, ingredient)}
-              onRemoveIngredient={(ingredientId) => onRemoveIngredient(section.id, ingredientId)}
-              onUpdateIngredient={(ingredientId, updates) => onUpdateIngredient(section.id, ingredientId, updates)}
+              onDrop={(ingredient) => handleAddIngredient(section.id, ingredient)}
+              onRemoveIngredient={(ingredientId) => handleRemoveIngredient(section.id, ingredientId)}
+              onUpdateIngredient={(ingredientId, updates) => handleUpdateIngredient(section.id, ingredientId, updates)}
               columns={columns}
             />
           ))}
@@ -988,12 +1127,89 @@ export default function FormulaCanvas({
 
       {showConfigModal && (
         <ConfigurationModal
-          sections={sections}
+          sections={currentSections}
           columns={columns}
           onUpdateSections={handleUpdateSections}
           onUpdateColumns={setColumns}
           onClose={() => setShowConfigModal(false)}
         />
+      )}
+    </div>
+  );
+}
+
+interface TrialTabProps {
+  trial: Trial;
+  isActive: boolean;
+  onClick: () => void;
+  onDelete: (e: React.MouseEvent) => void;
+  onRename: (newName: string) => void;
+  canDelete: boolean;
+}
+
+function TrialTab({ trial, isActive, onClick, onDelete, onRename, canDelete }: TrialTabProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(trial.name);
+
+  const handleSaveName = () => {
+    if (editName.trim()) {
+      onRename(editName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveName();
+    } else if (e.key === 'Escape') {
+      setEditName(trial.name);
+      setIsEditing(false);
+    }
+  };
+
+  return (
+    <div
+      className={`group relative flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-all whitespace-nowrap ${
+        isActive
+          ? 'bg-blue-100 text-blue-800 border border-blue-200'
+          : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'
+      }`}
+      onClick={onClick}
+    >
+      {isEditing ? (
+        <input
+          type="text"
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          onBlur={handleSaveName}
+          onKeyPress={handleKeyPress}
+          className="bg-transparent border-none outline-none text-sm font-medium w-20"
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className="text-sm font-medium"
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setIsEditing(true);
+          }}
+        >
+          {trial.name}
+        </span>
+      )}
+
+      {canDelete && (
+        <button
+          onClick={onDelete}
+          className={`w-4 h-4 flex items-center justify-center rounded-full transition-colors ${
+            isActive
+              ? 'text-blue-600 hover:bg-blue-200'
+              : 'text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+          } opacity-0 group-hover:opacity-100`}
+        >
+          <i className="ri-close-line text-xs"></i>
+        </button>
       )}
     </div>
   );
